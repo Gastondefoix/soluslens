@@ -19,16 +19,7 @@
     </div>
   </div>
 
-  <div class="p-7 border-r border-sl-border last:border-r-0" style="border-top: 3px solid {% if kpi.gha_netto >= 0 %}#6BDDAE{% else %}#CA1F7A{% endif %}">
-    <div class="sl-label">Saldo Ecologico</div>
-    <div class="sl-kpi {% if kpi.gha_netto >= 0 %}text-sl-green{% else %}text-sl-magenta{% endif %}">
-      {{ kpi.gha_netto|gha_fmt }}
-    </div>
-    <div class="sl-unit mt-1">gha netti</div>
-    <div class="sl-sub">
-      {% if kpi.gha_netto >= 0 %}biocapacità &gt; impronta ✓{% else %}impronta &gt; biocapacità{% endif %}
-    </div>
-  </div>
+  {% include 'components/kpi_card.html' with label='Saldo Ecologico' value=kpi.gha_netto unit='gha netti' tone='auto_balance' formatter='saldo_fmt' sub_pos='biocapacità &gt; impronta ✓' sub_neg='impronta &gt; biocapacità' %}
 
   <div class="p-7 border-r border-sl-border last:border-r-0" style="border-top: 3px solid #8a8f98">
     <div class="sl-label">Quantità Conferita</div>
@@ -126,9 +117,7 @@
   <div class="p-6 border-r border-sl-border last:border-r-0">
     <div class="sl-label">Saldo Ecologico · gha</div>
     <div class="flex flex-col items-center py-4">
-      <div class="font-mono text-5xl font-bold leading-none {% if kpi.gha_netto >= 0 %}text-sl-green{% else %}text-sl-magenta{% endif %}">
-        {{ kpi.gha_netto|gha_fmt }}
-      </div>
+      {% include 'components/balance.html' with value=kpi.gha_netto size='xl' %}
       <div class="sl-unit mt-2">ettari globali netti</div>
       <div class="flex items-center gap-3 mt-6 flex-wrap justify-center">
         {% if kpi.gha_s1 %}
@@ -155,9 +144,7 @@
         <div class="text-[#8a8f98] font-bold">=</div>
         <div class="text-center">
           <div class="text-[0.65rem] font-bold tracking-widest uppercase text-[#8a8f98] mb-1">Saldo</div>
-          <div class="sl-value text-sm {% if kpi.gha_netto >= 0 %}text-sl-green{% else %}text-sl-magenta{% endif %}">
-            {{ kpi.gha_netto|gha_fmt }}
-          </div>
+          {% include 'components/balance.html' with value=kpi.gha_netto size='md' %}
         </div>
       </div>
     </div>
@@ -242,8 +229,8 @@
             {% endif %}
           </td>
           <td class="sl-td sl-value text-sl-coral">{{ m.co2_trasporto|co2_fmt }} kgCO₂</td>
-          <td class="sl-td sl-value {% if m.gha_netto is not None %}{% if m.gha_netto >= 0 %}text-sl-green{% else %}text-sl-magenta{% endif %}{% endif %}">
-            {% if m.gha_netto is not None %}{{ m.gha_netto|gha_fmt }}{% else %}—{% endif %}
+          <td class="sl-td sl-value">
+            {% include 'components/balance.html' with value=m.gha_netto size='sm' %}
           </td>
         </tr>
         {% empty %}

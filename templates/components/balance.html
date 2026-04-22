@@ -1,0 +1,14 @@
+{% load dashboard_filters %}
+{% comment %}
+Balance component — renders gha_netto with sign, color, and size.
+Parameters (via {% include ... with %}):
+  value  number|None  — the gha_netto value (None → neutral dash)
+  size   string       — 'sm' | 'md' | 'lg' | 'xl'  (default: 'md')
+    sm  → text-sm font-mono font-semibold
+    md  → sl-value text-base  (font-mono font-semibold text-base)
+    lg  → text-xl font-mono font-semibold
+    xl  → font-mono text-5xl font-bold leading-none
+Does NOT include label or unit — those stay in the calling template.
+Always uses saldo_fmt (explicit +/− sign). Never use gha_fmt here.
+{% endcomment %}
+{% if value is None %}<span class="{% if size == 'xl' %}font-mono text-5xl font-bold leading-none{% elif size == 'lg' %}text-xl font-mono font-semibold{% elif size == 'sm' %}text-sm font-mono font-semibold{% else %}sl-value text-base{% endif %} text-[#8a8f98]">—</span>{% elif value >= 0 %}<span class="{% if size == 'xl' %}font-mono text-5xl font-bold leading-none{% elif size == 'lg' %}text-xl font-mono font-semibold{% elif size == 'sm' %}text-sm font-mono font-semibold{% else %}sl-value text-base{% endif %} text-sl-green">{{ value|saldo_fmt }}</span>{% else %}<span class="{% if size == 'xl' %}font-mono text-5xl font-bold leading-none{% elif size == 'lg' %}text-xl font-mono font-semibold{% elif size == 'sm' %}text-sm font-mono font-semibold{% else %}sl-value text-base{% endif %} text-sl-magenta">{{ value|saldo_fmt }}</span>{% endif %}

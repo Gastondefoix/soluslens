@@ -108,8 +108,8 @@
               Impronta Ecologica netta
             {% endif %}
           </div>
-          <div class="sl-metric-value {% if mov.gha_netto >= 0 %}text-sl-green{% else %}text-sl-magenta{% endif %}">
-            {{ mov.gha_netto|gha_fmt }} gha
+          <div class="sl-metric-value">
+            {% include 'components/balance.html' with value=mov.gha_netto size='md' %} gha
           </div>
         </div>
 

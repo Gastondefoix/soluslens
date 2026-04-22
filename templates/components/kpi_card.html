@@ -1,0 +1,28 @@
+{% load dashboard_filters %}
+{% comment %}
+Generic KPI card. Parameters (via {% include ... with %}):
+  label            string  — section label above value
+  value            number  — raw numeric value
+  unit             string  — unit text below value
+  tone             string  — 'blue' | 'magenta' | 'green' | 'auto_balance'
+                             auto_balance: sl-green if value>=0, sl-magenta if value<0
+  formatter        string  — 'gha_fmt' | 'saldo_fmt' | 'co2_fmt'  (default: gha_fmt)
+  sub              string  — optional sub-text; sl-sub row hidden if blank
+  sub_pos          string  — optional: shown when value>=0 (used with auto_balance)
+  sub_neg          string  — optional: shown when value<0  (used with auto_balance)
+  border_top_color string  — optional explicit HEX; if omitted, derived from tone
+{% endcomment %}
+<div class="p-7 border-r border-sl-border last:border-r-0" style="border-top: 3px solid {% if border_top_color %}{{ border_top_color }}{% elif tone == 'blue' %}#0975BD{% elif tone == 'magenta' %}#CA1F7A{% elif tone == 'green' %}#6BDDAE{% elif tone == 'auto_balance' %}{% if value >= 0 %}#6BDDAE{% else %}#CA1F7A{% endif %}{% else %}#8a8f98{% endif %}">
+  <div class="sl-label">{{ label }}</div>
+  {% if tone == 'auto_balance' %}
+  <div class="sl-kpi">{% include 'components/balance.html' with value=value size='xl' %}</div>
+  {% else %}
+  <div class="sl-kpi {% if tone == 'blue' %}text-sl-blue{% elif tone == 'magenta' %}text-sl-magenta{% elif tone == 'green' %}text-sl-green{% endif %}">
+    {% if formatter == 'co2_fmt' %}{{ value|co2_fmt }}{% else %}{{ value|gha_fmt }}{% endif %}
+  </div>
+  {% endif %}
+  <div class="sl-unit mt-1">{{ unit }}</div>
+  {% if sub_pos or sub_neg %}
+  <div class="sl-sub">{% if value >= 0 %}{{ sub_pos }}{% else %}{{ sub_neg }}{% endif %}</div>
+  {% elif sub %}<div class="sl-sub">{{ sub }}</div>{% endif %}
+</div>

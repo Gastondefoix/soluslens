@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Parco Mezzi — SolusLens{% endblock %}
+
+{% block content %}
+<div class="p-8 max-w-[1600px] mx-auto">
+
+  <div class="flex items-baseline gap-4 mb-8 pb-6 border-b border-sl-border">
+    <h1 class="text-2xl font-semibold tracking-tight">Parco Mezzi</h1>
+    <span class="text-sm text-[#8a8f98]">Parametri Emissioni · Curva Logaritmica CO₂/km</span>
+  </div>
+
+  <div class="sl-card overflow-hidden mb-6">
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse">
+        <thead>
+          <tr>
+            <th class="sl-th">Targa</th>
+            <th class="sl-th">Modello</th>
+            <th class="sl-th">Tipo</th>
+            <th class="sl-th">Alimentazione</th>
+            <th class="sl-th">Classe Euro</th>
+            <th class="sl-th">Portata (kg)</th>
+            <th class="sl-th">CO₂/km vuoto</th>
+            <th class="sl-th">CO₂/km pieno</th>
+            <th class="sl-th">CO₂/min operativo</th>
+            <th class="sl-th">Curva CO₂/km</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in veicoli_data %}
+          <tr>
+            <td class="sl-td font-mono font-bold">{{ v.obj.targa }}</td>
+            <td class="sl-td">{{ v.obj.modello }}</td>
+            <td class="sl-td">
+              <span class="sl-badge sl-badge-neutral">{{ v.obj.tipo }}</span>
+            </td>
+            <td class="sl-td">
+              <span class="sl-badge {% if v.obj.fuel == 'metano' %}sl-badge-bio{% else %}sl-badge-neutral{% endif %}">
+                {{ v.obj.fuel }}
+              </span>
+            </td>
+            <td class="sl-td font-mono">{% if v.obj.euro_class %}{{ v.obj.euro_class }}{% else %}—{% endif %}</td>
+            <td class="sl-td font-mono">{{ v.obj.portata_kg|floatformat:0 }}</td>
+            <td class="sl-td sl-value text-sl-blue">{{ v.obj.co2_km_vuoto_kg }}</td>
+            <td class="sl-td sl-value text-sl-magenta">{{ v.obj.co2_km_pieno_kg }}</td>
+            <td class="sl-td sl-value">
+              {% if v.obj.co2_min_kg %}<span class="text-sl-coral">{{ v.obj.co2_min_kg }}</span>{% else %}—{% endif %}
+            </td>
+            <td class="sl-td">
+              <canvas id="spark-{{ v.obj.targa }}" width="120" height="40" style="display:block"></canvas>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sl-card p-5">
+    <div class="sl-label">Note</div>
+    <p class="text-sm font-medium text-[#909090] leading-relaxed">
+      I valori CO₂/km sono espressi in <strong class="text-[#f0f0f0]">kg/km</strong>.
+      La curva logaritmica è calcolata secondo il modello Soluslab:
+      <code class="font-mono text-[0.78rem] bg-sl-surface px-1.5 py-0.5" style="border-radius:4px">
+        CO₂/km(C) = co2_vuoto + b × ln(1 + C)
+      </code>
+      dove b = (co2_pieno − co2_vuoto) / ln(1 + C_max).
+      CO₂/min si applica solo a compattatori e costipatori durante le fasi operative.
+    </p>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const veicoli = [
+  {% for v in veicoli_data %}
+  {
+    targa: "{{ v.obj.targa }}",
+    curve: {{ v.curve_json|safe }},
+    vuoto: {{ v.obj.co2_km_vuoto_kg }},
+    pieno: {{ v.obj.co2_km_pieno_kg }},
+  },
+  {% endfor %}
+];
+
+veicoli.forEach(v => {
+  const canvas = document.getElementById(`spark-${v.targa}`);
+  if (!canvas) return;
+  new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: v.curve.x,
+      datasets: [{
+        data: v.curve.y,
+        borderColor: '#b0b0b0',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0,
+      }],
+    },
+    options: {
+      responsive: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: { display: false },
+        y: { display: false },
+      },
+      animation: false,
+    },
+  });
+});
+</script>
+{% endblock %}

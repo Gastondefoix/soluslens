@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static dashboard_filters %}
+{% block title %}Dashboard — SolusLens{% endblock %}
+{% block content %}
+<div class="p-8 max-w-[1600px] mx-auto">
+
+  <!-- Page header -->
+  <div class="flex items-baseline gap-4 mb-8 pb-6 border-b border-sl-border">
+    <h1 class="text-2xl font-semibold tracking-tight">{{ azienda.nome }}</h1>
+    <span class="text-sm text-[#8a8f98]">Cruscotto Ambientale</span>
+  </div>
+
+  <!-- Controls -->
+  <div class="flex flex-wrap gap-3 items-start mb-8">
+    <div class="flex flex-wrap gap-2" id="ulFilter">
+      <button
+        class="sl-btn {% if not ul_attivo %}sl-btn-active{% else %}sl-btn-ghost{% endif %}"
+        data-ul=""
+        hx-get="/dashboard/partial/?mese={{ mese_attivo }}&ul="
+        hx-target="#dashboard-content"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        onclick="setActiveUL(this)">
+        Tutte le unità locali
+      </button>
+      {% for ul in unita_locali %}
+      <button
+        class="sl-btn {% if ul_attivo == ul.id|stringformat:'d' %}sl-btn-active{% else %}sl-btn-ghost{% endif %}"
+        data-ul="{{ ul.id }}"
+        hx-get="/dashboard/partial/?mese={{ mese_attivo }}&ul={{ ul.id }}"
+        hx-target="#dashboard-content"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        onclick="setActiveUL(this)">
+        {{ ul.indirizzo }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <div class="ml-auto">
+      <select id="meseSelect"
+        name="mese"
+        hx-get="/dashboard/partial/"
+        hx-target="#dashboard-content"
+        hx-swap="innerHTML"
+        hx-vals='{"ul": "{{ ul_attivo }}"}'
+        hx-push-url="true"
+        class="bg-sl-panel border border-sl-border-b text-[#f7f8f8] px-4 py-2 text-sm focus:border-sl-indigo transition-colors" style="border-radius:6px">
+        {% for m in mesi %}
+        <option value="{{ m }}" {% if m == mese_attivo %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <span class="htmx-indicator text-xs text-[#8a8f98] self-center">
+      Aggiornamento...
+    </span>
+  </div>
+
+  <!-- Dynamic content -->
+  <div id="dashboard-content">
+    {% include "partials/dashboard_content.html" %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setActiveUL(btn) {
+  document.querySelectorAll('#ulFilter button').forEach(b => {
+    b.classList.remove('sl-btn-active');
+    b.classList.add('sl-btn-ghost');
+  });
+  btn.classList.add('sl-btn-active');
+  btn.classList.remove('sl-btn-ghost');
+  const ul = btn.dataset.ul;
+  const sel = document.getElementById('meseSelect');
+  if (sel) {
+    sel.setAttribute('hx-vals', JSON.stringify({ul: ul}));
+    htmx.process(sel);
+  }
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}

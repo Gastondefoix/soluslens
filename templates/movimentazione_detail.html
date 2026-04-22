@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% load static dashboard_filters %}
+
+{% block title %}Movimentazione #{{ mov.id }} — SolusLens{% endblock %}
+
+{% block content %}
+<div class="max-w-[1600px] mx-auto p-8">
+
+  <!-- Breadcrumb -->
+  <div class="flex items-center gap-2 mb-6">
+    <a href="/dashboard/" class="text-sm text-[#8a8f98] hover:text-[#f7f8f8] transition-colors">Dashboard</a>
+    <span class="text-[#606060]">›</span>
+    <span class="text-sm text-[#f7f8f8] font-medium">Movimentazione #{{ mov.id }}</span>
+  </div>
+
+  <!-- Header card -->
+  <div class="sl-card p-6 mb-6">
+    <div class="grid grid-cols-4 gap-6 max-md:grid-cols-2">
+      <div>
+        <div class="sl-detail-label">Data</div>
+        <div class="sl-detail-value font-mono">{{ mov.giro.data|data_it }}</div>
+      </div>
+      <div>
+        <div class="sl-detail-label">Ora ritiro</div>
+        <div class="sl-detail-value font-mono">{{ mov.ora_ritiro|time:"H:i" }}</div>
+      </div>
+      <div>
+        <div class="sl-detail-label">Unità Locale</div>
+        <div class="sl-detail-value">{{ mov.unita_locale.indirizzo }}</div>
+      </div>
+      <div>
+        <div class="sl-detail-label">CER</div>
+        <div class="sl-detail-value">
+          <span class="sl-badge {% if mov.pericoloso %}sl-badge-danger{% else %}sl-badge-neutral{% endif %}">
+            {{ mov.materiale.cer }}{% if mov.pericoloso %} ⚠{% endif %}
+          </span>
+        </div>
+      </div>
+      <div>
+        <div class="sl-detail-label">Materiale</div>
+        <div class="sl-detail-value">{{ mov.materiale.nome }}</div>
+      </div>
+      <div>
+        <div class="sl-detail-label">Quantità</div>
+        <div class="sl-detail-value font-mono">{{ mov.quantita_kg|floatformat:0 }} kg</div>
+      </div>
+      <div>
+        <div class="sl-detail-label">Veicolo</div>
+        <div class="sl-detail-value font-mono">{{ veicolo.targa }} — {{ veicolo.modello }}</div>
+      </div>
+      <div>
+        <div class="sl-detail-label">N. Formulario</div>
+        <div class="sl-detail-value font-mono">{{ mov.n_formulario }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two column: ecological + transport -->
+  <div class="sl-card grid grid-cols-2 max-md:grid-cols-1 mb-6">
+
+    <!-- Ecological -->
+    <div class="p-6 border-r border-sl-border last:border-r-0">
+      <div class="sl-label">Impatto Ecologico</div>
+
+      {% if mov.pericoloso %}
+      <div class="border border-sl-magenta text-sl-magenta px-4 py-3 text-xs font-medium" style="border-radius:6px">
+        Rifiuto pericoloso — l'impatto ecologico non viene calcolato.
+        Solo le emissioni da trasporto sono rilevanti.
+      </div>
+      {% else %}
+
+        {% if mov.s1_gha is not None %}
+        <div class="sl-metric">
+          <div class="sl-metric-label">S1 — Biocapacità liberata dalla riduzione di assorbimento delle emissioni</div>
+          <div class="sl-metric-value text-sl-blue">{{ mov.s1_gha|gha_fmt }} gha</div>
+        </div>
+        <div class="sl-metric">
+          <div class="sl-metric-label">S2 — Impronta ecologica generata dai processi di recupero</div>
+          <div class="sl-metric-value text-sl-magenta">{{ mov.s2_gha|gha_fmt }} gha</div>
+        </div>
+        {% endif %}
+
+        {% if mov.s_gha is not None %}
+        <div class="sl-metric">
+          <div class="sl-metric-label">
+            {% if mov.s_gha_tipo == 'biotico' %}
+              S — Costo ecologico del processo di recupero biologico
+            {% else %}
+              S — Impronta ecologica da rifiuto con scarsa attitudine al recupero
+            {% endif %}
+          </div>
+          <div class="sl-metric-value text-sl-magenta">{{ mov.s_gha|gha_fmt }} gha</div>
+        </div>
+        {% endif %}
+
+        <div class="sl-metric">
+          <div class="sl-metric-label">H — Biocapacità liberata dalla riduzione di sfruttamento del terreno</div>
+          <div class="sl-metric-value text-sl-blue">
+            {% if mov.gha_terreno %}{{ mov.gha_terreno|gha_fmt }}{% else %}—{% endif %} gha
+          </div>
+        </div>
+
+        <div class="sl-metric">
+          <div class="sl-metric-label font-semibold text-[#f7f8f8]">
+            {% if mov.gha_netto >= 0 %}
+              Biocapacità liberata dall'assorbimento delle emissioni
+            {% else %}
+              Impronta Ecologica netta
+            {% endif %}
+          </div>
+          <div class="sl-metric-value {% if mov.gha_netto >= 0 %}text-sl-green{% else %}text-sl-magenta{% endif %}">
+            {{ mov.gha_netto|gha_fmt }} gha
+          </div>
+        </div>
+
+      {% endif %}
+    </div>
+
+    <!-- Transport -->
+    <div class="p-6 border-r border-sl-border last:border-r-0">
+      <div class="sl-label">Emissioni da Trasporto</div>
+
+      <div class="sl-metric">
+        <div class="sl-metric-label">T1 — Quota emissioni itinerario, ripartita per numero di clienti nel giro</div>
+        <div class="sl-metric-value text-sl-coral">{{ mov.t1_co2|co2_fmt }} kgCO₂</div>
+      </div>
+
+      <div class="sl-metric">
+        <div class="sl-metric-label">T2 — Incremento da carico, proporzionale al peso conferito</div>
+        <div class="sl-metric-value text-sl-coral">{{ mov.t2_co2|co2_fmt }} kgCO₂</div>
+      </div>
+
+      <div class="sl-metric">
+        <div class="sl-metric-label font-semibold text-[#f7f8f8]">Totale emissioni trasporto</div>
+        <div class="sl-metric-value text-sl-coral">{{ mov.co2_trasporto|co2_fmt }} kgCO₂</div>
+      </div>
+
+      <div class="mt-6 pt-6 border-t border-sl-border">
+        <div class="sl-label">Dati Giro</div>
+        <div class="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+          <div>
+            <div class="sl-detail-label">Km itinerario</div>
+            <div class="sl-detail-value font-mono">{{ giro.km_itinerario|floatformat:1 }} km</div>
+          </div>
+          <div>
+            <div class="sl-detail-label">N. clienti nel giro</div>
+            <div class="sl-detail-value font-mono">{{ giro.n_clienti_totale }}</div>
+          </div>
+          <div>
+            <div class="sl-detail-label">Carico totale giro</div>
+            <div class="sl-detail-value font-mono">{{ carico_giro_kg|floatformat:0 }} kg</div>
+          </div>
+          <div>
+            <div class="sl-detail-label">D. baricentro</div>
+            <div class="sl-detail-value font-mono">{{ mov.d_baricentro_km|floatformat:1 }} km</div>
+          </div>
+          <div>
+            <div class="sl-detail-label">Destinatario</div>
+            <div class="sl-detail-value">{{ giro.destinatario }}</div>
+          </div>
+          {% if giro.op_min > 0 %}
+          <div>
+            <div class="sl-detail-label">Min. operativi</div>
+            <div class="sl-detail-value font-mono">{{ giro.op_min|floatformat:0 }} min</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Logarithmic curve — full width -->
+  <div class="sl-card p-6 mb-6">
+    <div class="sl-label">
+      Curva Emissioni Veicolo · {{ veicolo.targa }} {{ veicolo.modello }}
+      {% if veicolo.euro_class %}· {{ veicolo.euro_class }}{% endif %}
+      · {{ veicolo.fuel }}
+    </div>
+    <div id="plotly-curve" class="w-full h-[380px]"></div>
+    <div class="flex flex-wrap gap-4 mt-3">
+      <div class="flex items-center gap-2 text-xs text-[#d0d6e0]">
+        <span class="w-2 h-2 inline-block shrink-0" style="background:#b0b0b0"></span>
+        <span>Curva logaritmica CO₂/km</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-[#d0d6e0]">
+        <span class="w-2 h-2 inline-block shrink-0" style="background:#FF6B35"></span>
+        <span>Carico giro attuale: {{ carico_giro_kg|floatformat:0 }} kg → {{ co2_at_load }} kgCO₂/km</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-[#d0d6e0]">
+        <span class="w-2 h-2 inline-block shrink-0" style="background:#0975BD"></span>
+        <span>A vuoto: {{ veicolo.co2_km_vuoto_kg }} kgCO₂/km</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-[#d0d6e0]">
+        <span class="w-2 h-2 inline-block shrink-0" style="background:#CA1F7A"></span>
+        <span>A pieno carico: {{ veicolo.co2_km_pieno_kg }} kgCO₂/km</span>
+      </div>
+    </div>
+
+    <details class="border border-sl-border mt-5">
+      <summary class="px-4 py-3 text-[0.7rem] font-bold tracking-widest uppercase text-[#d0d6e0] cursor-pointer">Dettaglio calcolo curva</summary>
+      <div class="px-4 pb-4">
+        <p class="text-sm text-[#d0d6e0] mb-3">La curva segue un modello logaritmico calibrato su due misurazioni:</p>
+        <pre class="bg-sl-surface border border-sl-border p-4 mt-3 font-mono text-[0.75rem] leading-loose overflow-x-auto">b = (co2_pieno − co2_vuoto) / ln(1 + C_max)
+  = ({{ veicolo.co2_km_pieno_kg }} − {{ veicolo.co2_km_vuoto_kg }}) / ln(1 + {{ veicolo.portata_kg }})
+  = {{ b }}
+
+CO₂/km(C) = co2_vuoto + b × ln(1 + C)
+           = {{ veicolo.co2_km_vuoto_kg }} + {{ b }} × ln(1 + C)
+
+Al carico attuale ({{ carico_giro_kg|floatformat:0 }} kg):
+CO₂/km = {{ co2_at_load }} kgCO₂/km</pre>
+      </div>
+    </details>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script>
+(function() {
+  const data = {{ curve_json|safe }};
+
+  const curveTrace = {
+    x: data.x,
+    y: data.y,
+    mode: 'lines',
+    line: { color: '#b0b0b0', width: 2 },
+    name: 'CO₂/km',
+    hovertemplate: 'Carico: %{x} kg<br>CO₂/km: %{y:.4f} kg/km<extra></extra>',
+  };
+
+  const vuotoTrace = {
+    x: [0],
+    y: [data.co2_vuoto],
+    mode: 'markers',
+    marker: { color: '#0975BD', size: 10, symbol: 'circle' },
+    name: 'A vuoto',
+    hovertemplate: 'A vuoto<br>CO₂/km: %{y:.4f} kg/km<extra></extra>',
+  };
+
+  const pienoTrace = {
+    x: [data.portata_kg],
+    y: [data.co2_pieno],
+    mode: 'markers',
+    marker: { color: '#CA1F7A', size: 10, symbol: 'circle' },
+    name: 'A pieno carico',
+    hovertemplate: 'A pieno carico<br>CO₂/km: %{y:.4f} kg/km<extra></extra>',
+  };
+
+  const caricoTrace = {
+    x: [data.carico_kg],
+    y: [data.co2_at_load],
+    mode: 'markers',
+    marker: { color: '#FF6B35', size: 14, symbol: 'diamond' },
+    name: 'Carico giro',
+    hovertemplate: 'Carico giro: %{x} kg<br>CO₂/km: %{y:.5f} kg/km<extra></extra>',
+  };
+
+  const layout = {
+    paper_bgcolor: '#08090a',
+    plot_bgcolor: '#0f1011',
+    font: { family: 'Inter', color: '#8a8f98', size: 12 },
+    margin: { t: 20, r: 20, b: 60, l: 70 },
+    xaxis: {
+      title: { text: 'Carico (kg)', font: { color: '#8a8f98' } },
+      gridcolor: 'rgba(255,255,255,0.05)',
+      zerolinecolor: 'rgba(255,255,255,0.08)',
+      tickfont: { color: '#8a8f98', family: 'JetBrains Mono' },
+      range: [0, data.portata_kg * 1.05],
+    },
+    yaxis: {
+      title: { text: 'CO₂/km (kg/km)', font: { color: '#8a8f98' } },
+      gridcolor: 'rgba(255,255,255,0.05)',
+      zerolinecolor: 'rgba(255,255,255,0.08)',
+      tickfont: { color: '#8a8f98', family: 'JetBrains Mono' },
+    },
+    showlegend: false,
+    hovermode: 'closest',
+    shapes: [
+      {
+        type: 'line',
+        x0: data.carico_kg, x1: data.carico_kg,
+        y0: 0, y1: data.co2_at_load,
+        line: { color: '#FF6B35', width: 1, dash: 'dot' },
+      },
+      {
+        type: 'line',
+        x0: 0, x1: data.carico_kg,
+        y0: data.co2_at_load, y1: data.co2_at_load,
+        line: { color: '#FF6B35', width: 1, dash: 'dot' },
+      },
+    ],
+  };
+
+  Plotly.newPlot('plotly-curve',
+    [curveTrace, vuotoTrace, pienoTrace, caricoTrace],
+    layout,
+    { responsive: true, displayModeBar: false }
+  );
+})();
+</script>
+{% endblock %}

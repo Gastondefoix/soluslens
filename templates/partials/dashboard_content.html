@@ -1,0 +1,341 @@
+{% load dashboard_filters %}
+
+<!-- KPI -->
+<div class="sl-card grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 mb-8">
+
+  <div class="p-7 border-r border-sl-border last:border-r-0" style="border-top: 3px solid {% if kpi.gha_processo >= 0 %}#0975BD{% else %}#CA1F7A{% endif %}">
+    <div class="sl-label">{% if kpi.gha_processo >= 0 %}Biocapacità da Processo{% else %}Impronta Ecologica{% endif %}</div>
+    <div class="sl-kpi {% if kpi.gha_processo >= 0 %}text-sl-blue{% else %}text-sl-magenta{% endif %}">{{ kpi.gha_processo_abs|gha_fmt }}</div>
+    <div class="sl-unit mt-1">gha &nbsp;·&nbsp; S1 − S2 − S</div>
+    <div class="sl-sub">{{ kpi.n_mov|sub:kpi.n_peric }} movim. non pericolosi</div>
+  </div>
+
+  <div class="p-7 border-r border-sl-border last:border-r-0" style="border-top: 3px solid #0975BD">
+    <div class="sl-label">Biocapacità Liberata</div>
+    <div class="sl-kpi text-sl-blue">{{ kpi.gha_terreno|gha_fmt }}</div>
+    <div class="sl-unit mt-1">gha &nbsp;·&nbsp; da terreno biotico</div>
+    <div class="sl-sub">
+      {% if kpi.gha_terreno %}da materiali biotici{% else %}nessun materiale biotico{% endif %}
+    </div>
+  </div>
+
+  <div class="p-7 border-r border-sl-border last:border-r-0" style="border-top: 3px solid {% if kpi.gha_netto >= 0 %}#6BDDAE{% else %}#CA1F7A{% endif %}">
+    <div class="sl-label">Saldo Ecologico</div>
+    <div class="sl-kpi {% if kpi.gha_netto >= 0 %}text-sl-green{% else %}text-sl-magenta{% endif %}">
+      {{ kpi.gha_netto|gha_fmt }}
+    </div>
+    <div class="sl-unit mt-1">gha netti</div>
+    <div class="sl-sub">
+      {% if kpi.gha_netto >= 0 %}biocapacità &gt; impronta ✓{% else %}impronta &gt; biocapacità{% endif %}
+    </div>
+  </div>
+
+  <div class="p-7 border-r border-sl-border last:border-r-0" style="border-top: 3px solid #8a8f98">
+    <div class="sl-label">Quantità Conferita</div>
+    <div class="sl-kpi">{{ kpi.kg|floatformat:0 }} <span class="text-base font-medium text-[#8a8f98]">kg</span></div>
+    <div class="sl-unit mt-1">{{ kpi.n_mov }} ritiri</div>
+    <div class="sl-sub">di cui {{ kpi.n_peric }} pericolosi</div>
+  </div>
+
+</div>
+
+<!-- Panels -->
+<div class="sl-card grid grid-cols-3 max-xl:grid-cols-2 max-md:grid-cols-1 mb-8">
+
+  <!-- Trasporto -->
+  <div class="p-6 border-r border-sl-border last:border-r-0">
+    <div class="sl-label">Emissioni Trasporto · kgCO₂</div>
+    <div>
+      <div class="flex items-center gap-3 mb-2">
+        <span class="sl-unit w-6 shrink-0">T1</span>
+        <div class="sl-bar-track">
+          <div class="h-full sl-bar-coral transition-all duration-500" style="width:{% widthratio kpi.t1 kpi.gha_max_t 100 %}%"></div>
+        </div>
+        <span class="sl-value text-sm w-32 text-right shrink-0 text-sl-coral">{{ kpi.t1|co2_fmt }} kgCO₂</span>
+      </div>
+      <div class="flex items-center gap-3 mb-2">
+        <span class="sl-unit w-6 shrink-0">T2</span>
+        <div class="sl-bar-track">
+          <div class="h-full sl-bar-coral opacity-60 transition-all duration-500" style="width:{% widthratio kpi.t2 kpi.gha_max_t 100 %}%"></div>
+        </div>
+        <span class="sl-value text-sm w-32 text-right shrink-0 text-sl-coral">{{ kpi.t2|co2_fmt }} kgCO₂</span>
+      </div>
+      <div class="flex items-center gap-3 mt-3 pt-3 border-t border-sl-border">
+        <span class="sl-unit w-6 shrink-0">TOT</span>
+        <span class="sl-value text-sl-coral">{{ kpi.co2_trasporto|co2_fmt }}</span>
+        <span class="sl-unit">kgCO₂</span>
+      </div>
+      <div class="text-[0.75rem] text-[#8a8f98] mt-3 leading-relaxed">
+        <strong>T1</strong> — Quota emissioni itinerario, ripartita per numero di clienti nel giro<br>
+        <strong>T2</strong> — Incremento da carico, proporzionale al peso conferito
+      </div>
+    </div>
+  </div>
+
+  <!-- Processo S1/S2/S -->
+  <div class="p-6 border-r border-sl-border last:border-r-0">
+    <div class="sl-label">Scomposizione Processo · gha</div>
+    <div>
+      {% if kpi.gha_s1 %}
+      <div class="flex items-center gap-3 mb-2" id="rowS1">
+        <span class="sl-unit w-6 shrink-0">S1</span>
+        <div class="sl-bar-track">
+          <div class="h-full sl-bar-blue transition-all duration-500"
+               style="width:{% widthratio kpi.gha_s1_abs kpi.gha_max_p 100 %}%">
+          </div>
+        </div>
+        <span class="sl-value text-sm w-32 text-right shrink-0 text-sl-blue">{{ kpi.gha_s1|gha_fmt }} gha</span>
+      </div>
+      <div class="flex items-center gap-3 mb-2" id="rowS2">
+        <span class="sl-unit w-6 shrink-0">S2</span>
+        <div class="sl-bar-track">
+          <div class="h-full sl-bar-magenta transition-all duration-500"
+               style="width:{% widthratio kpi.gha_s2_abs kpi.gha_max_p 100 %}%">
+          </div>
+        </div>
+        <span class="sl-value text-sm w-32 text-right shrink-0 text-sl-magenta">{{ kpi.gha_s2|gha_fmt }} gha</span>
+      </div>
+      {% endif %}
+      {% if kpi.gha_s %}
+      <div class="flex items-center gap-3 mb-2" id="rowS">
+        <span class="sl-unit w-6 shrink-0">S</span>
+        <div class="sl-bar-track">
+          <div class="h-full sl-bar-magenta transition-all duration-500"
+               style="width:{% widthratio kpi.gha_s_abs kpi.gha_max_p 100 %}%">
+          </div>
+        </div>
+        <span class="sl-value text-sm w-32 text-right shrink-0 text-sl-magenta">{{ kpi.gha_s|gha_fmt }} gha</span>
+      </div>
+      {% endif %}
+      <div class="flex items-center gap-3 mt-3 pt-3 border-t border-sl-border">
+        <span class="sl-unit w-6 shrink-0">TOT</span>
+        <span class="sl-value {% if kpi.gha_processo <= 0 %}text-sl-blue{% else %}text-sl-magenta{% endif %}">
+          {{ kpi.gha_processo|gha_fmt }}
+        </span>
+        <span class="sl-unit">gha</span>
+      </div>
+      <div class="text-[0.75rem] text-[#8a8f98] mt-3 leading-relaxed">
+        <strong>S1</strong> — Biocapacità liberata dalla riduzione di assorbimento delle emissioni (positivo = beneficio)<br>
+        <strong>S2</strong> — Impronta prodotta dall'attività sui rifiuti<br>
+        <strong>S</strong> &nbsp;— Impronta ecologica da rifiuto con scarsa attitudine al recupero
+      </div>
+    </div>
+  </div>
+
+  <!-- Saldo GHA -->
+  <div class="p-6 border-r border-sl-border last:border-r-0">
+    <div class="sl-label">Saldo Ecologico · gha</div>
+    <div class="flex flex-col items-center py-4">
+      <div class="font-mono text-5xl font-bold leading-none {% if kpi.gha_netto >= 0 %}text-sl-green{% else %}text-sl-magenta{% endif %}">
+        {{ kpi.gha_netto|gha_fmt }}
+      </div>
+      <div class="sl-unit mt-2">ettari globali netti</div>
+      <div class="flex items-center gap-3 mt-6 flex-wrap justify-center">
+        {% if kpi.gha_s1 %}
+        <div class="text-center">
+          <div class="text-[0.65rem] font-bold tracking-widest uppercase text-[#8a8f98] mb-1">S1</div>
+          <div class="sl-value text-sm text-sl-blue">{{ kpi.gha_s1|gha_fmt }}</div>
+        </div>
+        <div class="text-[#8a8f98] font-bold">−</div>
+        <div class="text-center">
+          <div class="text-[0.65rem] font-bold tracking-widest uppercase text-[#8a8f98] mb-1">S2</div>
+          <div class="sl-value text-sm text-sl-magenta">{{ kpi.gha_s2|gha_fmt }}</div>
+        </div>
+        {% else %}
+        <div class="text-center">
+          <div class="text-[0.65rem] font-bold tracking-widest uppercase text-[#8a8f98] mb-1">S</div>
+          <div class="sl-value text-sm text-sl-magenta">{{ kpi.gha_s|gha_fmt }}</div>
+        </div>
+        {% endif %}
+        <div class="text-[#8a8f98] font-bold">+</div>
+        <div class="text-center">
+          <div class="text-[0.65rem] font-bold tracking-widest uppercase text-[#8a8f98] mb-1">H</div>
+          <div class="sl-value text-sm text-sl-blue">{{ kpi.gha_terreno|gha_fmt }}</div>
+        </div>
+        <div class="text-[#8a8f98] font-bold">=</div>
+        <div class="text-center">
+          <div class="text-[0.65rem] font-bold tracking-widest uppercase text-[#8a8f98] mb-1">Saldo</div>
+          <div class="sl-value text-sm {% if kpi.gha_netto >= 0 %}text-sl-green{% else %}text-sl-magenta{% endif %}">
+            {{ kpi.gha_netto|gha_fmt }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Charts -->
+<div class="sl-card grid grid-cols-2 max-lg:grid-cols-1 mb-8">
+  <div class="p-6 border-r border-sl-border last:border-r-0">
+    <div class="sl-label">CO₂ Trasporto · kgCO₂ · {{ mese_attivo }}</div>
+    <div style="position:relative;width:100%;height:200px;overflow:hidden">
+      <canvas id="chartTrasporto"></canvas>
+    </div>
+    <div class="flex gap-4 mt-3">
+      <span class="w-2 h-2 inline-block mt-1 shrink-0" style="background:#FF6B35"></span>
+      <span class="text-xs text-[#d0d6e0]">CO₂ Trasporto (T1+T2)</span>
+    </div>
+  </div>
+  <div class="p-6 border-r border-sl-border last:border-r-0">
+    <div class="sl-label">Andamento Ecologico · gha · {{ mese_attivo }}</div>
+    <div style="position:relative;width:100%;height:200px;overflow:hidden">
+      <canvas id="chartEco"></canvas>
+    </div>
+    <div class="flex gap-4 mt-3 flex-wrap">
+      <span class="flex items-center gap-2 text-xs text-[#d0d6e0]">
+        <span class="w-2 h-2 inline-block shrink-0" style="background:#FF6B35"></span>
+        Impronta (gha)
+      </span>
+      <span class="flex items-center gap-2 text-xs text-[#d0d6e0]">
+        <span class="w-2 h-2 inline-block shrink-0" style="background:#0975BD"></span>
+        Biocapacità (gha)
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Movimentazioni table -->
+<div class="sl-card overflow-hidden mb-8">
+  <div class="flex items-center justify-between px-6 py-4 border-b border-sl-border">
+    <div class="sl-label mb-0">Movimentazioni</div>
+    <span class="sl-value text-sm text-[#8a8f98]">
+      {{ movs|length }} ritiri
+    </span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse">
+      <thead>
+        <tr>
+          <th class="sl-th">Data</th>
+          <th class="sl-th">Unità Locale</th>
+          <th class="sl-th">CER</th>
+          <th class="sl-th">Materiale</th>
+          <th class="sl-th">kg</th>
+          <th class="sl-th">S1 / S2 / S</th>
+          <th class="sl-th">Trasporto</th>
+          <th class="sl-th">Saldo gha</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in movs %}
+        <tr class="cursor-pointer hover:bg-sl-hover transition-colors" onclick="window.location='/movimentazioni/{{ m.id }}/'">
+          <td class="sl-td font-mono">{{ m.giro__data|data_it }}</td>
+          <td class="sl-td">{{ m.unita_locale__indirizzo }}</td>
+          <td class="sl-td">
+            <span class="sl-badge {% if m.materiale__pericoloso %}sl-badge-danger{% else %}sl-badge-neutral{% endif %}">
+              {{ m.materiale__cer }}{% if m.materiale__pericoloso %} ⚠{% endif %}
+            </span>
+          </td>
+          <td class="sl-td">{{ m.materiale__nome }}</td>
+          <td class="sl-td font-mono">{{ m.quantita_kg|floatformat:0 }} kg</td>
+          <td class="sl-td">
+            {% if not m.pericoloso %}
+              {% if m.s1_gha is not None %}
+                <span class="sl-value text-sl-blue">{{ m.s1_gha|gha_fmt }}</span> /
+                <span class="sl-value text-sl-magenta">{{ m.s2_gha|gha_fmt }}</span>
+              {% elif m.s_gha is not None %}
+                <span class="sl-value text-sl-magenta">{{ m.s_gha|gha_fmt }}</span>
+              {% endif %}
+            {% else %}
+              <span class="text-[#606060]">—</span>
+            {% endif %}
+          </td>
+          <td class="sl-td sl-value text-sl-coral">{{ m.co2_trasporto|co2_fmt }} kgCO₂</td>
+          <td class="sl-td sl-value {% if m.gha_netto is not None %}{% if m.gha_netto >= 0 %}text-sl-green{% else %}text-sl-magenta{% endif %}{% endif %}">
+            {% if m.gha_netto is not None %}{{ m.gha_netto|gha_fmt }}{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="sl-td text-center text-[#8a8f98] py-8">
+            Nessuna movimentazione per il periodo selezionato.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Chart.js init — runs after every HTMX swap -->
+<script>
+(function() {
+  const serie = {{ kpi.serie|safe }};
+  const days = Array.from({length: 31}, (_, i) => String(i + 1).padStart(2, '0'));
+
+  function byDay(serie, key) {
+    const map = {};
+    serie.forEach(s => {
+      const d = s.data.split('-')[2];
+      if (map[d] === undefined) map[d] = 0;
+      map[d] += s[key] || 0;
+    });
+    return days.map(d => map[d] > 0 ? map[d] : null);
+  }
+
+  const baseOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: { color: '#8a8f98', font: { family: 'Inter', size: 11, weight: '500' } },
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        border: { color: 'rgba(255,255,255,0.08)' },
+      },
+      y: {
+        ticks: { color: '#8a8f98', font: { family: 'Inter', size: 11, weight: '500' } },
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        border: { color: 'rgba(255,255,255,0.08)' },
+      },
+    },
+  };
+  const dot = { showLine: false, pointRadius: 5, pointHoverRadius: 7, tension: 0, spanGaps: false };
+
+  const ct = document.getElementById('chartTrasporto');
+  const ce = document.getElementById('chartEco');
+
+  if (ct) {
+    if (ct._chart) ct._chart.destroy();
+    ct._chart = new Chart(ct, {
+      type: 'line',
+      data: {
+        labels: days,
+        datasets: [{
+          data: byDay(serie, 'co2_trasporto'),
+          borderColor: '#FF6B35',
+          backgroundColor: 'transparent',
+          ...dot
+        }]
+      },
+      options: baseOpts,
+    });
+  }
+
+  if (ce) {
+    if (ce._chart) ce._chart.destroy();
+    ce._chart = new Chart(ce, {
+      type: 'line',
+      data: {
+        labels: days,
+        datasets: [
+          {
+            data: byDay(serie, 'gha_processo').map(v => v !== null ? Math.abs(v) : null),
+            borderColor: '#FF6B35',
+            backgroundColor: 'transparent',
+            ...dot
+          },
+          {
+            data: byDay(serie, 'gha_terreno'),
+            borderColor: '#0975BD',
+            backgroundColor: 'transparent',
+            ...dot
+          },
+        ],
+      },
+      options: baseOpts,
+    });
+  }
+})();
+</script>

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static dashboard_filters %}
+
+{% block title %}Fattori Emissivi — SolusLens{% endblock %}
+
+{% block content %}
+<div class="p-8 max-w-[1600px] mx-auto">
+
+  <div class="flex items-baseline gap-4 mb-8 pb-6 border-b border-sl-border">
+    <h1 class="text-2xl font-semibold tracking-tight">Fattori Emissivi</h1>
+    <span class="text-sm text-[#8a8f98]">Riferimento gha/T · Fonte: GFN + letteratura scientifica</span>
+  </div>
+
+  <div class="sl-card overflow-hidden mb-6">
+    <div class="overflow-x-auto">
+      <table class="border-collapse min-w-[1200px]">
+        <thead>
+          <tr>
+            <th class="sl-th">CER</th>
+            <th class="sl-th">Descrizione</th>
+            <th class="sl-th">Origine</th>
+            <th class="sl-th">Tipo</th>
+            <th class="sl-th">Pericoloso</th>
+            <th class="sl-th">Produzione vergine evitata (gha/T)</th>
+            <th class="sl-th">Smaltimento (gha/T)</th>
+            <th class="sl-th">Trattamento (gha/T)</th>
+            <th class="sl-th">Riciclo (gha/T)</th>
+            <th class="sl-th">Resa coltura (t/ha/anno)</th>
+            <th class="sl-th">Fattore equivalenza (gha/ha)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in materiali_data %}
+          <tr>
+            <td class="sl-td font-mono font-bold">{{ m.obj.cer }}</td>
+            <td class="sl-td max-w-[200px]">{{ m.obj.descrizione }}</td>
+            <td class="sl-td">
+              <span class="sl-badge sl-badge-neutral">{{ m.obj.origine }}</span>
+            </td>
+            <td class="sl-td">
+              <span class="sl-badge {% if m.obj.tipo == 'biotico' %}sl-badge-bio{% else %}sl-badge-neutral{% endif %}">
+                {{ m.obj.tipo }}
+              </span>
+            </td>
+            <td class="sl-td">
+              {% if m.obj.pericoloso %}
+                <span class="sl-badge sl-badge-danger">⚠ pericoloso</span>
+              {% else %}
+                <span class="text-[#606060]">—</span>
+              {% endif %}
+            </td>
+            <td class="sl-td sl-value text-sl-blue">{% if m.tv_gha is not None %}{{ m.tv_gha }}{% else %}—{% endif %}</td>
+            <td class="sl-td sl-value text-sl-magenta">{% if m.ts_gha is not None %}{{ m.ts_gha }}{% else %}—{% endif %}</td>
+            <td class="sl-td sl-value">{% if m.tt_gha is not None %}{{ m.tt_gha }}{% else %}—{% endif %}</td>
+            <td class="sl-td sl-value">{% if m.tr_gha is not None %}{{ m.tr_gha }}{% else %}—{% endif %}</td>
+            <td class="sl-td sl-value">{% if m.obj.resa %}{{ m.obj.resa }}{% else %}—{% endif %}</td>
+            <td class="sl-td sl-value">{% if m.obj.f_equiv %}{{ m.obj.f_equiv }}{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sl-card p-5">
+    <div class="sl-label">Conversione unità</div>
+    <p class="text-sm font-medium text-[#909090] leading-relaxed">
+      I fattori originali sono espressi in <strong class="text-[#f0f0f0]">kgCO₂/kg</strong>.
+      La conversione in gha/T segue:
+      <code class="font-mono text-[0.78rem] bg-sl-surface px-1.5 py-0.5" style="border-radius:4px">
+        gha/T = (kgCO₂/kg) / 1800 × 1000
+      </code>
+      dove 1800 kgCO₂/gha/anno è il fattore di impronta carbonica GFN.
+      Resa coltura e fattore equivalenza sono fonte Global Footprint Network (GFN).
+    </p>
+  </div>
+
+</div>
+{% endblock %}
